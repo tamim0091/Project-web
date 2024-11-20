@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Époques, Civilisations et Événements Tunisiens</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/custom.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+            color: #007bff;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 24px;
+            color: #0056b3;
+            margin-top: 40px;
+        }
+
+        .items-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 50px 0;
+        }
+
+        .item {
+            background-color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 280px;
+            margin: 20px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .item h4 {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .item p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        /* Modal d'info dynamique */
+        .info {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            padding-top: 100px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .info-content {
+            background-color: #fff;
+            border-radius: 10px;
+            width: 70%;
+            margin: auto;
+            padding: 20px;
+            animation: slideIn 0.5s ease-out;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .info-content img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .info-content h3 {
+            font-size: 24px;
+            margin-top: 20px;
+            color: #0056b3;
+        }
+
+        .info-content p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .close-info {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close-info:hover {
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Les Époques, Civilisations et Événements Tunisiens</h1>
+
+    <!-- Section des Époques -->
+    <div class="section-title">Les Époques Clés de l'Histoire de la Tunisie</div>
+    <div class="items-container">
+        <!-- Époque Antique -->
+        <div class="item" onclick="showInfo('antiquite')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Carthage_300px.jpg" alt="Antiquité">
+            <h4>Antiquité</h4>
+            <p>Période de grandes civilisations comme Carthage et Rome.</p>
+        </div>
+
+        <!-- Époque Moderne -->
+        <div class="item" onclick="showInfo('moderne')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Tunis_Independence.jpg/400px-Tunis_Independence.jpg" alt="Indépendance">
+            <h4>Époque Moderne</h4>
+            <p>L’indépendance de la Tunisie en 1956 et la transition vers une république.</p>
+        </div>
+
+        <!-- Époque Contemporaine -->
+        <div class="item" onclick="showInfo('contemporaine')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/TunisiaRevolution2011.jpg" alt="Révolution">
+            <h4>Époque Contemporaine</h4>
+            <p>La révolution tunisienne de 2011, un tournant pour le pays.</p>
+        </div>
+    </div>
+
+    <!-- Section des Civilisations -->
+    <div class="section-title">Les Civilisations de la Tunisie</div>
+    <div class="items-container">
+        <!-- Civilisation Romaine -->
+        <div class="item" onclick="showInfo('romaine')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Colosseum_in_Rome.jpg" alt="Romaine">
+            <h4>Civilisation Romaine</h4>
+            <p>Dominance de Rome sur la Tunisie durant l'Antiquité.</p>
+        </div>
+
+        <!-- Civilisation Arabe -->
+        <div class="item" onclick="showInfo('arabe')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Great_Mosque_of_Kairouan.jpg" alt="Arabe">
+            <h4>Civilisation Arabe</h4>
+            <p>La conquête et l'influence arabe au Moyen Âge en Tunisie.</p>
+        </div>
+    </div>
+
+    <!-- Section des Événements -->
+    <div class="section-title">Événements Clés de l'Histoire de la Tunisie</div>
+    <div class="items-container">
+        <!-- Bataille de Carthage -->
+        <div class="item" onclick="showInfo('bataille-carthage')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/Battle_of_Zama_by_Henry_John_Stock.jpg" alt="Bataille de Carthage">
+            <h4>Bataille de Carthage</h4>
+            <p>Un événement décisif durant la guerre des Puniques.</p>
+        </div>
+
+        <!-- Révolution de 2011 -->
+        <div class="item" onclick="showInfo('revolution')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Tunisia_2011_revolution.jpg" alt="Révolution Tunisienne">
+            <h4>Révolution Tunisienne 2011</h4>
+            <p>Le soulèvement populaire qui a renversé Ben Ali.</p>
+        </div>
+    </div>
+
+    <!-- Modal d'affichage des informations -->
+    <div id="info" class="info">
+        <div class="info-content">
+            <span class="close-info" onclick="closeInfo()">&times;</span>
+            <h3 id="infoTitle">Titre</h3>
+            <img id="infoImage" src="" alt="Image de l'Événement">
+            <p id="infoDescription"></p>
+            <a id="infoLink" href="#" target="_blank" class="btn btn-primary">Regarder la vidéo</a>
+        </div>
+    </div>
+
+    <script>
+        // Informations pour chaque élément avec liens vidéos réels sur la Tunisie
+        const infoData = {
+            antiquite: {
+                title: "Antiquité",
+                image: "https://upload.wikimedia.org/wikipedia/commons/3/3d/Carthage_300px.jpg",
+                description: "La période antique est marquée par des civilisations comme Carthage et Rome, qui ont influencé toute la région méditerranéenne.",
+                videoLink: "https://www.youtube.com/watch?v=wInnGryiTVc" // Vidéo sur Carthage
+            },
+            moderne: {
+                title: "Époque Moderne",
+                image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Tunis_Independence.jpg/400px-Tunis_Independence.jpg",
+                description: "L’indépendance de la Tunisie en 1956 a marqué le début d'une ère nouvelle pour le pays.",
+                videoLink: "https://www.youtube.com/watch?v=Ffg-HJFu8FA" // Vidéo sur l'indépendance de la Tunisie
+            },
+            contemporaine: {
+                title: "Époque Contemporaine",
+                image: "https://upload.wikimedia.org/wikipedia/commons/1/1b/TunisiaRevolution2011.jpg",
+                description: "La révolution tunisienne de 2011 a marqué un tournant majeur pour la démocratie en Tunisie.",
+                videoLink: "https://www.youtube.com/watch?v=k5iK8wFpqUg" // Vidéo sur la Révolution Tunisienne de 2011
+            },
+            romaine: {
+                title: "Civilisation Romaine",
+                image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Colosseum_in_Rome.jpg",
+                description: "La civilisation romaine a eu une grande influence sur la région, notamment à travers la ville de Carthage.",
+                videoLink: "https://www.youtube.com/watch?v=w1nB3gZpWhI" // Vidéo sur la civilisation romaine
+            },
+            arabe: {
+                title: "Civilisation Arabe",
+                image: "https://upload.wikimedia.org/wikipedia/commons/a/a0/Great_Mosque_of_Kairouan.jpg",
+                description: "Les Arabes ont conquis la Tunisie au 7ème siècle, introduisant l'islam dans le pays.",
+                videoLink: "https://www.youtube.com/watch?v=OGVft2kbkOs" // Vidéo sur la civilisation arabe
+            },
+            'bataille-carthage': {
+                title: "Bataille de Carthage",
+                image: "https://upload.wikimedia.org/wikipedia/commons/c/c4/Battle_of_Zama_by_Henry_John_Stock.jpg",
+                description: "La bataille de Carthage a marqué un tournant dans les guerres puniques entre Rome et Carthage.",
+                videoLink: "https://www.youtube.com/watch?v=E4dnAxdMzH4" // Vidéo sur la bataille de Carthage
+            },
+            revolution: {
+                title: "Révolution Tunisienne 2011",
+                image: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Tunisia_2011_revolution.jpg",
+                description: "Le soulèvement populaire de 2011 a conduit à la chute du président Ben Ali et à l’instauration d’une nouvelle démocratie.",
+                videoLink: "https://www.youtube.com/watch?v=PT62GJc7ZV8" // Vidéo sur la révolution tunisienne de 2011
+            }
+        };
+
+        // Affichage des informations
+        function showInfo(id) {
+            const data = infoData[id];
+            document.getElementById('infoTitle').innerText = data.title;
+            document.getElementById('infoImage').src = data.image;
+            document.getElementById('infoDescription').innerText = data.description;
+            document.getElementById('infoLink').href = data.videoLink;
+            document.getElementById('info').style.display = "block";
+        }
+
+        // Fermeture du modal
+        function closeInfo() {
+            document.getElementById('info').style.display = "none";
+        }
+    </script>
+
+</body>
+</html>
