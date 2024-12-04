@@ -1,0 +1,169 @@
+<?php
+require '../vendor/autoload.php';
+
+// Inclure les dépendances Google Cloud à l'aide de Composer
+use Google\Cloud\RecaptchaEnterprise\V1\RecaptchaEnterpriseServiceClient;
+use Google\Cloud\RecaptchaEnterprise\V1\Event;
+use Google\Cloud\RecaptchaEnterprise\V1\Assessment;
+use Google\Cloud\RecaptchaEnterprise\V1\TokenProperties\InvalidReason;
+
+session_start();  // Start the session to manage user login state
+
+// Your hardcoded username and password
+$valid_username = "AKJZEHAZJEA";
+$valid_password = "KAZJEHZUEII";
+$valid_user_id = 17;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get the form input values
+    $username = $_POST["Fullname"];
+    $password = $_POST["password"];
+    $recaptcha_response = $_POST['g-recaptcha-response'];  // Get the reCAPTCHA response token
+
+    // reCAPTCHA Secret Key from your Google reCAPTCHA v3 setup
+    $recaptcha_secret_key = '6Lc-CJIqAAAAAMSJPyVZ6J53brB9FMj45Mjs71yM';  // Replace with your secret key
+
+    // Validate reCAPTCHA with Google API
+    $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=".$recaptcha_secret_key."&response=".$recaptcha_response);
+    $response_data = json_decode($response);
+
+    // If reCAPTCHA validation fails, show error and stop execution
+    if (!$response_data->success || $response_data->score < 0.5) {  // Score threshold can be adjusted
+        $_SESSION['recaptcha_err'] = 'reCAPTCHA validation failed!';
+        header('Location: login.php');
+        exit();
+    }
+
+    // Check if the entered username and password match the valid credentials
+    if ($username === $valid_username && $password === $valid_password) {
+        // Valid login, set the session variables
+        $_SESSION["Fullname"] = $username;
+        $_SESSION["id"] = $valid_user_id;
+        $_SESSION["logged_in"] = true;
+
+        // Redirect to home page
+        header("Location: index1.php");
+        exit();
+    } else {
+        // Invalid login, display an error message
+        echo "<script>alert('Invalid username or password');</script>";
+    }
+}
+
+// Function to create reCAPTCHA assessment using Google Cloud reCAPTCHA Enterprise
+function create_assessment(
+  string $recaptchaKey,
+  string $token,
+  string $project,
+  string $action
+): void {
+  // Create the reCAPTCHA client
+  $client = new RecaptchaEnterpriseServiceClient();
+  $projectName = $client->projectName($project);
+
+  // Set up the event properties for tracking
+  $event = (new Event())
+    ->setSiteKey($recaptchaKey)
+    ->setToken($token);
+
+  // Create the assessment request
+  $assessment = (new Assessment())
+    ->setEvent($event);
+
+  try {
+    $response = $client->createAssessment(
+      $projectName,
+      $assessment
+    );
+
+    // Check if the token is valid
+    if ($response->getTokenProperties()->getValid() == false) {
+      printf('The CreateAssessment() call failed because the token was invalid for the following reason: ');
+      printf(InvalidReason::name($response->getTokenProperties()->getInvalidReason()));
+      return;
+    }
+
+    // Check if the expected action was performed
+    if ($response->getTokenProperties()->getAction() == $action) {
+      // Get the risk score and reason(s)
+      printf('The score for the protection action is: ');
+      printf($response->getRiskAnalysis()->getScore());
+    } else {
+      printf('The action attribute in your reCAPTCHA tag does not match the action you are expecting to score');
+    }
+  } catch (Exception $e) {
+    printf('CreateAssessment() call failed with the following error: ');
+    printf($e);
+  }
+}
+
+// Call the function to create the assessment when the form is submitted
+create_assessment(
+   '6Lc-CJIqAAAAAMSJPyVZ6J53brB9FMj45Mjs71yM',  // Replace with your reCAPTCHA site key
+   'YOUR_USER_RESPONSE_TOKEN',  // Replace with the response token from the form
+   'YOUR_PROJECT_ID',  // Replace with your Google Cloud project ID
+   'submit'  // Action defined on the client-side
+);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="style2.css">
+    
+    <!-- Load reCAPTCHA v3 with the correct Site Key -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lc-CJIqAAAAAMSJPyVZ6J53brB9FMj45Mjs71yM" async defer></script>  <!-- Correct Site Key -->
+
+</head>
+<body>
+    <div class="container">
+        <img src="chrono.png" alt="Chronovoyage Logo" class="logo">
+        <div class="content">
+            <div class="title">Sign In</div>
+            <form class="form" action="login.php" method="POST">
+                <!-- Input for Username -->
+                <div class="input-box">
+                    <span class="details">Username</span>
+                    <input type="text" placeholder="Enter your username" name="Fullname" required>
+                </div>
+                <!-- Input for Password -->
+                <div class="input-box">
+                    <span class="details">Password</span>
+                    <input type="password" placeholder="Enter your password" name="password" required>
+                </div>
+
+                <!-- Submit button -->
+                <div class="button">
+                    <input type="submit" value="Sign In">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Trigger reCAPTCHA v3 when the form is submitted
+        document.querySelector('form').addEventListener('submit', function(event) {
+            event.preventDefault();  // Prevent form submission until reCAPTCHA is verified
+            
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Lc-CJIqAAAAAMSJPyVZ6J53brB9FMj45Mjs71yM', {action: 'submit'}).then(function(token) {
+                    // Add the reCAPTCHA response token to the form
+                    var recaptchaInput = document.createElement('input');
+                    recaptchaInput.type = 'hidden';
+                    recaptchaInput.name = 'g-recaptcha-response';
+                    recaptchaInput.value = token;
+                    document.querySelector('form').appendChild(recaptchaInput);
+                    
+                    // Submit the form after adding the token
+                    document.querySelector('form').submit();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+

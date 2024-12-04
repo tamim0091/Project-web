@@ -1,55 +1,110 @@
 <?php
-
 include '../../voyage-master/controller/usercontroller.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require '../vendor/autoload.php';
 
 $error = "";
 
 // create formation
 $user = null;
-$role="user";
+$role = "user";
+
 // create an instance of the controller
 $userc = new UserController();
-if (
-    isset($_POST["FullName"]) &&
-    isset($_POST["Username"]) &&
-    isset($_POST["Email"]) &&
-    isset($_POST["PhoneNumber"])&&
-    isset($_POST["Password"]) &&
-    isset($_POST["ConfirmPassword"])&&
-    isset($_POST["Gender"]) 
-  
- 
-    
-) {
+
+if (isset(
+    $_POST["FullName"], 
+    $_POST["Username"], 
+    $_POST["Email"], 
+    $_POST["Password"], 
+    $_POST["PhoneNumber"], 
+    $_POST["ConfirmPassword"], 
+    $_POST["Gender"]
+)) {
     if (
-        !empty($_POST["FullName"]) &&
-        !empty($_POST["Username"]) &&
-        !empty($_POST["Email"]) &&
-        !empty($_POST["PhoneNumber"])&&
-        isset($_POST["Password"]) &&
-        !empty($_POST["ConfirmPassword"]) &&
+        !empty($_POST["FullName"]) && 
+        !empty($_POST["Username"]) && 
+        !empty($_POST["Email"]) && 
+        !empty($_POST["Password"]) && 
+        !empty($_POST["PhoneNumber"]) && 
+        !empty($_POST["ConfirmPassword"]) && 
         !empty($_POST["Gender"])
     ) {
-        $user = new User(
-            null,
-            $_POST["FullName"],
-            $_POST["Username"],
-            $_POST["Email"],
-            $_POST["PhoneNumber"],
-            $_POST["Password"],
-            $_POST["ConfirmPassword"],
-            $_POST["Gender"],
-            "User"
-         
-        );
-        $userc->addUser($user);
-     header('Location:index.php');
-    } else
-        $error = "Missing information";
+        // Check if passwords match
+        if ($_POST["Password"] !== $_POST["ConfirmPassword"]) {
+            $error = "Passwords do not match!";
+        } else {
+            $user = new User(
+                null,
+                $_POST["FullName"],
+                $_POST["Username"],
+                $_POST["Email"],
+                $_POST["Password"],
+                $_POST["PhoneNumber"],
+                $_POST["ConfirmPassword"],
+                $_POST["Gender"],
+                "User"
+            );
+
+            if ($userc->addUser($user)) {
+                // Create the PHPMailer instance
+                $mail = new PHPMailer(true);
+                try {
+                    // Setup the SMTP configuration
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com'; // Set the SMTP server
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'choeurproject@gmail.com'; // Your Gmail address
+                    $mail->Password = 'oabw kzbc bghm mgeb'; // Your Gmail password or app-specific password
+                    $mail->SMTPSecure = 'tls'; // Use TLS encryption
+                    $mail->Port = 587; // SMTP Port for Gmail
+
+                    // Sender and receiver details
+                    $mail->setFrom('choeurproject@gmail.com', 'Mailer');
+                    $mail->addAddress($_POST["Email"]);
+
+                    // HTML email content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Account Registration Confirmation';
+                    $mail->Body    = 'Dear ' . $_POST["FullName"] . ',<br><br>Thank you for registering with us.<br>Your account is now created.<br><br>Best regards,<br>Chronovoyage Team';
+
+                    // Debugging: Print the email content to the console
+                    echo "<pre>Email Content: </pre>";
+                    echo "<pre>To: " . $_POST["Email"] . "</pre>";
+                    echo "<pre>Subject: Account Registration Confirmation</pre>";
+                    echo "<pre>Body: $emailBody</pre>";
+
+                    // PHPMailer debugging output
+                    $mail->SMTPDebug = 2;  // Set to 2 to show detailed debug output
+
+                    // Send the email
+                    if ($mail->send()) {
+                        echo '<p style="color: green;">A confirmation email has been sent to your email address.</p>';
+                    } else {
+                        echo '<p style="color: red;">There was a problem sending the email.</p>';
+                    }
+
+                    // Redirect after successful registration
+                    header('Location: ../index.php'); // Correct the redirect path
+                    exit(); // Always call exit after header redirect
+                } catch (Exception $e) {
+                    // Catch PHPMailer exceptions and display the error
+                    echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                }
+            }
+        }
+    } else {
+        $error = "Missing information. Please fill out all fields.";
+    }
 }
 
-
+if ($error) {
+    echo "<p style='color: red;'>$error</p>";
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>

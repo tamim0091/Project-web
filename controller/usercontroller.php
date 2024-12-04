@@ -38,14 +38,15 @@ class UserController
     // Add a new user
     public function addUser($user)
     {
-        $sql = "INSERT INTO users (FullName, Email, Password, PhoneNumber, ConfirmPassword, Gender, Role) 
-                VALUES (:FullName, :Email, :Password, :PhoneNumber, :ConfirmPassword, :Gender, :Role)";
+        $sql = "INSERT INTO users (FullName, Username, Email, Password, PhoneNumber, ConfirmPassword, Gender, Role) 
+            VALUES (:FullName, :Username, :Email, :Password, :PhoneNumber, :ConfirmPassword, :Gender, :Role)";
         $db = config::getConnexion();
         try {
             // Prepare and execute the insert query
             $query = $db->prepare($sql);
             $query->execute([
                 'FullName' => $user->getFullName(),
+                'Username' => $user->getUsername(), 
                 'Email' => $user->getEmail(),
                 'Password' => $user->getPassword(), // Hash the password
                 'PhoneNumber' => $user->getPhoneNumber(),
@@ -55,7 +56,7 @@ class UserController
             ]);
 
                     // Redirect to the same page
-                    header('Location:voyage-master\view\elegant\index.php');
+                    header('Location: /voyage-master/view/elegant/index.php');
         } catch (Exception $e) {
             echo 'Error: ' . $e->getMessage();
         }

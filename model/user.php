@@ -2,8 +2,9 @@
 class User
 {
     // Private properties
-    private ?int $id = null;
+    private $id = null;
     private $FullName = null;
+    private $Username = null;  // Add Username
     private $Email = null;
     private $Password = null;
     private $PhoneNumber = null;
@@ -11,31 +12,19 @@ class User
     private $Gender = null;
     private $Role = null;
 
-    // // Constructor to initialize properties
-    // public function __construct($id=null,$FullName, $Email, $Password, $PhoneNumber, $ConfirmPassword, $Gender, $Role="User")
-    // {
-    //     $this->id=$id;
-    //     $this->FullName = $FullName;
-    //     $this->Email = $Email;
-    //     $this->Password = $Password;
-    //     $this->PhoneNumber = $PhoneNumber;
-    //     $this->ConfirmPassword = $ConfirmPassword;
-    //     $this->Gender = $Gender;
-    //     $this->Role = "User";
-    // }
-
-    public function __construct($id = null,$FullName, $Email, $Password, $PhoneNumber, $ConfirmPassword, $Gender, $Role = "User")
-{
-    $this->id = $id;
-    $this->FullName = $FullName;
-    $this->Email = $Email;
-    $this->Password = $Password;
-    $this->PhoneNumber = $PhoneNumber;
-    $this->ConfirmPassword = $ConfirmPassword;
-    $this->Gender = $Gender;
-    $this->Role = "User"; // Default value for Role if not provided
-}
-
+    // Constructor to initialize properties
+    public function __construct($id, $FullName, $Username, $Email, $Password, $PhoneNumber, $ConfirmPassword, $Gender, $Role = "User")
+    {
+        $this->id = $id;
+        $this->FullName = $FullName;
+        $this->Username = $Username;  // Initialize Username
+        $this->Email = $Email;
+        $this->Password = $Password;
+        $this->PhoneNumber = $PhoneNumber;
+        $this->ConfirmPassword = $ConfirmPassword;
+        $this->Gender = $Gender;
+        $this->Role = $Role;  // Set Role dynamically, default to 'User'
+    }
 
     // Getter and Setter for FullName
     public function getFullName()
@@ -46,6 +35,17 @@ class User
     public function setFullName($FullName)
     {
         $this->FullName = $FullName;
+    }
+
+    // Getter and Setter for Username
+    public function getUsername()
+    {
+        return $this->Username;
+    }
+
+    public function setUsername($Username)
+    {
+        $this->Username = $Username;
     }
 
     // Getter and Setter for Email
@@ -114,4 +114,5 @@ class User
         $this->Role = $Role;
     }
 }
+
 ?>
