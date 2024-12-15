@@ -2,113 +2,80 @@
 include __DIR__ . '/../config.php';
 include __DIR__ . '/../Model/user.php';
 
-
 class UserController
 {
-    // List all users
     public function listUsers()
     {
-        $sql = "SELECT * FROM users"; // Assuming the table name is 'users'
+        $sql = "SELECT * FROM users";
         $db = config::getConnexion();
         try {
-            $liste = $db->query($sql); // Execute the query
-            return $liste; // Return the list of users
+            $stmt = $db->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch all users as an associative array
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
 
-    // Delete a user by ID
     public function deleteUser($id)
     {
-        $sql = "DELETE FROM users WHERE id = :id"; // Assuming the primary key is 'id'
-        $db = config::getConnexion();
-        $req = $db->prepare($sql);
-        $req->bindValue(':id', $id); // Bind the ID parameter
-
-        try {
-            $req->execute(); // Execute the query
-        // Redirect to the same page
-        header('Location:voyage-master\view\elegant\index.php');
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
-        }
-    }
-
-    // Add a new user
-    public function addUser($user)
-    {
-        $sql = "INSERT INTO users (FullName, Username, Email, Password, PhoneNumber, ConfirmPassword, Gender, Role) 
-            VALUES (:FullName, :Username, :Email, :Password, :PhoneNumber, :ConfirmPassword, :Gender, :Role)";
+        $sql = "DELETE FROM users WHERE id = :id";
         $db = config::getConnexion();
         try {
-            // Prepare and execute the insert query
             $query = $db->prepare($sql);
-            $query->execute([
-                'FullName' => $user->getFullName(),
-                'Username' => $user->getUsername(), 
-                'Email' => $user->getEmail(),
-                'Password' => $user->getPassword(), // Hash the password
-                'PhoneNumber' => $user->getPhoneNumber(),
-                'ConfirmPassword' => $user->getConfirmPassword(),
-                'Gender' => $user->getGender(),
-                'Role' => $user->getRole()
-            ]);
-
-                    // Redirect to the same page
-                    header('Location: /voyage-master/view/elegant/index.php');
+            $query->bindValue(':id', $id, PDO::PARAM_INT);
+            $query->execute();
+            return true;
         } catch (Exception $e) {
             echo 'Error: ' . $e->getMessage();
+            return false;
         }
     }
 
-    // public function updateUser($user, $user_id) {
-    //     try {
-    //         $query = "UPDATE users SET
-    //                     FullName = :FullName,
-    //                     Email = :Email,
-    //                     PhoneNumber = :PhoneNumber,
-    //                     Password = :Password,
-    //                     Gender = :Gender
-    //                   WHERE id = :id";
+    public function addUser($user)
+    {
+        $sql = "INSERT INTO users (FullName, Email, Password, PhoneNumber, Gender, Role, created_at, updated_at) 
+                VALUES (:FullName, :Email, :Password, :PhoneNumber, :Gender, :Role, NOW(), NOW())";
+    
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute([
+                'FullName'    => $user->getFullName(),
+                'Email'       => $user->getEmail(),
+                'Password'    => $user->getPassword(),
+                'PhoneNumber' => $user->getPhoneNumber(),
+                'Gender'      => $user->getGender(),
+                'Role'        => $user->getRole()
+            ]);
+    
+            return true;
+        } catch (Exception $e) {
+            echo 'Error in addUser: ' . $e->getMessage();
+            return false;
+        }
+    }
+    
 
-    //         $stmt = $this->db->prepare($query);
-
-    //         $stmt->bindParam(':FullName', $user->FullName, PDO::PARAM_STR);
-    //         $stmt->bindParam(':Email', $user->Email, PDO::PARAM_STR);
-    //         $stmt->bindParam(':PhoneNumber', $user->PhoneNumber, PDO::PARAM_STR);
-    //         $stmt->bindParam(':Password', $user->Password, PDO::PARAM_STR);
-    //         $stmt->bindParam(':Gender', $user->Gender, PDO::PARAM_STR);
-    //         $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
-
-    //         $stmt->execute();
-
-    //         // If rows are affected, return true
-    //         return $stmt->rowCount() > 0;
-    //     } catch (PDOException $e) {
-    //         die("Error updating user: " . $e->getMessage());
-    //     }
-    // }
     public function updateUser($user, $id)
     {
         $sql = "UPDATE users SET 
-                FullName = :FullName,
-                Email = :Email,
-                Password = :Password,
-                PhoneNumber = :PhoneNumber,
-                ConfirmPassword = :ConfirmPassword,
-                Gender = :Gender,
-                Role = :Role
+                    FullName = :FullName,
+                    Email = :Email,
+                    Password = :Password,
+                    PhoneNumber = :PhoneNumber,
+                    Gender = :Gender,
+                    Role = :Role
                 WHERE id = :id";
-    
+
         $db = config::getConnexion();
         try {
-            // Hash password if it's updated
             $password = $user->getPassword();
-            if (!empty($password)) {
-                $password = password_hash($password, PASSWORD_DEFAULT);
+            if (empty($password)) {
+                $currentUser = $this->showUser($id);
+                $password = $currentUser['Password'];
             }
-    
+
             $query = $db->prepare($sql);
             $query->execute([
                 'id' => $id,
@@ -116,7 +83,6 @@ class UserController
                 'Email' => $user->getEmail(),
                 'Password' => $password,
                 'PhoneNumber' => $user->getPhoneNumber(),
-                'ConfirmPassword' => $user->getConfirmPassword(),
                 'Gender' => $user->getGender(),
                 'Role' => $user->getRole()
             ]);
@@ -124,28 +90,21 @@ class UserController
             echo 'Error: ' . $e->getMessage();
         }
     }
-    
-    
-    
 
-    // Show a specific user by ID
     public function showUser($id)
     {
-        $sql = "SELECT * FROM users WHERE id = :id"; // Fetch user by ID
+        $sql = "SELECT * FROM users WHERE id = :id";
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
             $query->bindValue(':id', $id);
             $query->execute();
-
-            $user = $query->fetch();
-            return $user; // Return the user data
+            return $query->fetch();
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
 
-    // Optional: Search for users based on specific parameters
     public function searchUsers($name, $email)
     {
         $sql = "SELECT * FROM users WHERE FullName LIKE :name OR Email LIKE :email";
@@ -155,53 +114,132 @@ class UserController
             $query->bindValue(':name', "%$name%");
             $query->bindValue(':email', "%$email%");
             $query->execute();
-            
-            $users = $query->fetchAll();
-            return $users; // Return search results
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
-        }
-    }
-    
-    // Get a list of all roles from the 'users' table (optional)
-    public function listRoles()
-    {
-        $sql = "SELECT DISTINCT Role FROM users"; // Query for distinct roles
-        $db = config::getConnexion();
-        try {
-            $liste = $db->query($sql); // Execute the query
-            return $liste; // Return the list of roles
+            return $query->fetchAll();
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
 
-     // Make a user an admin
-     public function makeAdmin($id)
-     {
-         $sql = "UPDATE users SET Role = 'Admin' WHERE id = :id"; // Update user's role to 'Admin'
-         $db = config::getConnexion();
-         try {
-             $query = $db->prepare($sql);
-             $query->bindValue(':id', $id);
-             $query->execute();
-         } catch (Exception $e) {
-             die('Error: ' . $e->getMessage());
-         }
-     }
+    public function makeAdmin($id)
+    {
+        $sql = "UPDATE users SET Role = 'Admin' WHERE id = :id";
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->bindValue(':id', $id, PDO::PARAM_INT);
+            $query->execute();
+            return true;
+        } catch (Exception $e) {
+            echo 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    // Demote a user to User
+    public function makeUser($id)
+    {
+        $sql = "UPDATE users SET Role = 'User' WHERE id = :id";
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->bindValue(':id', $id, PDO::PARAM_INT);
+            $query->execute();
+            return true;
+        } catch (Exception $e) {
+            echo 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+    
+
+    public function login($identifier, $password, $useEmail = false)
+    {
+        $column = $useEmail ? 'Email' : 'Username';
+        $sql = "SELECT * FROM users WHERE $column = :identifier LIMIT 1";
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->bindValue(':identifier', $identifier, PDO::PARAM_STR);
+            $query->execute();
+            $user = $query->fetch(PDO::FETCH_ASSOC);
+    
+            if ($user && password_verify($password, $user['Password'])) {
+                return $user;
+            } else {
+                return null;
+            }
+        } catch (Exception $e) {
+            die('Error: ' . $e->getMessage());
+        }
+    }
+    
+    public function setRememberMeToken($userId, $token)
+    {
+        $sql = "UPDATE users SET remember_token = :token WHERE id = :id";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->execute([':token' => $token, ':id' => $userId]);
+    }
+    
+    public function getUserByToken($token)
+    {
+        $sql = "SELECT * FROM users WHERE remember_token = :token LIMIT 1";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->execute([':token' => $token]);
+        return $query->fetch(PDO::FETCH_ASSOC);
+    }
  
-     // Make an admin a regular user
-     public function makeUser($id)
-     {
-         $sql = "UPDATE users SET Role = 'User' WHERE id = :id"; // Update user's role to 'User'
-         $db = config::getConnexion();
-         try {
-             $query = $db->prepare($sql);
-             $query->bindValue(':id', $id);
-             $query->execute();
-         } catch (Exception $e) {
-             die('Error: ' . $e->getMessage());
-         }
-     }
+    public function getUserByEmail($email)
+    {
+        $sql = "SELECT * FROM users WHERE Email = :email LIMIT 1";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->bindValue(':email', $email, PDO::PARAM_STR);
+        $query->execute();
+        return $query->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function setResetToken($userId, $token, $expires)
+    {
+        $sql = "UPDATE users SET password_reset_token = :token, password_reset_expires = :expires WHERE id = :id";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->execute([
+            ':token' => $token,
+            ':expires' => $expires,
+            ':id' => $userId
+        ]);
+    }
+
+    public function getUserByResetToken($token)
+    {
+        $sql = "SELECT * FROM users WHERE password_reset_token = :token LIMIT 1";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->bindValue(':token', $token, PDO::PARAM_STR);
+        $query->execute();
+        return $query->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function updatePassword($userId, $newPassword)
+    {
+        $sql = "UPDATE users SET Password = :password WHERE id = :id";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->execute([
+            ':password' => $newPassword,
+            ':id' => $userId
+        ]);
+    }
+
+    public function clearResetToken($userId)
+    {
+        $sql = "UPDATE users SET password_reset_token = NULL, password_reset_expires = NULL WHERE id = :id";
+        $db = config::getConnexion();
+        $query = $db->prepare($sql);
+        $query->execute([':id' => $userId]);
+    }
+
+    
 }
-?>

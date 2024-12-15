@@ -1,6 +1,5 @@
 <?php
-
-class config
+class Config
 {
     private static $pdo = null;
 
@@ -18,7 +17,7 @@ class config
                     ]
                 );
             } catch (Exception $e) {
-                die('Erreur: ' . $e->getMessage());
+                die('Error: ' . $e->getMessage());
             }
         }
         return self::$pdo;

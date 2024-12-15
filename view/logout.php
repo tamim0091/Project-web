@@ -1,23 +1,22 @@
 <?php
-// Start the session
 session_start();
+include __DIR__ . '../../Controller/UserController.php';
 
-// Destroy all session variables
-$_SESSION = array();
+$userController = new UserController();
 
-// If you want to completely destroy the session, clear the session cookie as well
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+if (isset($_SESSION['id'])) {
+    // Clear remember token
+    $userController->setRememberMeToken($_SESSION['id'], null);
 }
 
-// Destroy the session
+// Clear session
+$_SESSION = array();
 session_destroy();
 
-// Redirect to login page after logging out
-header("Location: index.php");
+// Clear remember me cookie
+if (isset($_COOKIE['remember_me'])) {
+    setcookie('remember_me', '', time() - 3600, "/", "", false, true);
+}
+
+header("Location: MainPage.php");
 exit;
-?>

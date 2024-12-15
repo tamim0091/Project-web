@@ -1,6 +1,8 @@
 {
     "require": {
         "phpmailer/phpmailer": "^6.9",
-        "google/cloud-recaptcha-enterprise": "^1.17"
+        "google/cloud-recaptcha-enterprise": "^1.17",
+        "fpdf/fpdf": "^1.86",
+        "setasign/fpdf": "^1.8"
     }
 }
