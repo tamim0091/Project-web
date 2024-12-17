@@ -11,50 +11,39 @@ $userc = new UserController();
 $role = "User";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Retrieve form data
     $FullName        = trim($_POST["FullName"] ?? '');
     $Email           = trim($_POST["Email"] ?? '');
     $Password        = trim($_POST["Password"] ?? '');
     $ConfirmPassword = trim($_POST["ConfirmPassword"] ?? '');
-    $PhoneNumber     = trim($_POST["FormattedPhoneNumber"] ?? ''); // We'll use the formatted number from hidden input
+    $PhoneNumber     = trim($_POST["FormattedPhoneNumber"] ?? '');
     $Gender          = trim($_POST["Gender"] ?? '');
 
-    // Validate required fields
     if (empty($FullName) || empty($Email) || empty($Password) || empty($ConfirmPassword) || empty($PhoneNumber) || empty($Gender)) {
         $error = "Missing information. Please fill out all fields.";
     } else {
-        // Full name validation: start with capital letter and only letters/spaces
         if (!preg_match("/^[A-Z][a-zA-Z ]*$/", $FullName)) {
             $error = "Full Name should start with a capital letter and contain only letters and spaces.";
         }
 
-        // Email validation: Proper email format
         if (empty($error) && !filter_var($Email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
         }
 
-        // Phone number validation (E.164 format check, optional)
-        // Assuming the plugin gives us a proper E.164 format like +123456789
         if (empty($error) && !preg_match("/^\+\d{6,15}$/", $PhoneNumber)) {
             $error = "Invalid phone number format.";
         }
 
-        // Passwords match
         if (empty($error) && $Password !== $ConfirmPassword) {
             $error = "Passwords do not match!";
         }
 
-        // Password complexity check
         $uppercase = preg_match('@[A-Z]@', $Password);
         $number    = preg_match('@[0-9]@', $Password);
-
         if (empty($error) && (strlen($Password) < 8 || !$uppercase || !$number)) {
             $error = "Password must be at least 8 characters long, contain at least one uppercase letter, and one number.";
         }
 
-        // If no errors so far, proceed with user creation
         if (empty($error)) {
-            // Hash the password
             $hashedPassword = password_hash($Password, PASSWORD_DEFAULT);
 
             $user = new User(
@@ -71,7 +60,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 // Send confirmation email
                 $mail = new PHPMailer(true);
                 try {
-                    // SMTP configuration
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
@@ -80,7 +68,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail->SMTPSecure = 'tls';
                     $mail->Port = 587;
 
-                    // Sender and recipient
                     $mail->setFrom('choeurproject@gmail.com', 'Chronovoyage');
                     $mail->addAddress($Email);
 
@@ -91,13 +78,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     if ($mail->send()) {
                         echo '<p style="color: green;">A confirmation email has been sent to your email address.</p>';
+                        header('Location: login.php');
+                        exit();
                     } else {
-                        echo '<p style="color: red;">There was a problem sending the email.</p>';
+                        echo '<p style="color: red;">There was a problem sending the email. Error: ' . $mail->ErrorInfo . '</p>';
                     }
 
-                    // Redirect after successful registration
-                    header('Location: login.php');
-                    exit();
                 } catch (Exception $e) {
                     echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
                 }
@@ -116,13 +102,12 @@ if ($error) {
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Registration Form | Chronovoyage</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-dKy2q+OgnA4TfIn2yfwgCM0XiaY+xCz6cnJeuEF8r+F1FaFOc5KV0p1QMmFqdnS6PrU0uW+nD9wOrPUkl6zMA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <!-- intl-tel-input CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/css/intlTelInput.css" />
 
   <style>
@@ -132,7 +117,7 @@ if ($error) {
       background: #ddd;
       border-radius: 3px;
       margin-top: 5px;
-      display: none; /* hidden by default */
+      display: none;
     }
     .strength-bar {
       height: 100%;
@@ -140,22 +125,13 @@ if ($error) {
       border-radius: 3px;
       transition: width 0.3s ease, background-color 0.3s ease;
     }
-    .strength-weak {
-      background-color: red;
-      width: 33%;
-    }
-    .strength-medium {
-      background-color: orange;
-      width: 67%;
-    }
-    .strength-strong {
-      background-color: green;
-      width: 100%;
-    }
+    .strength-weak { background-color: red; width: 33%; }
+    .strength-medium { background-color: orange; width: 67%; }
+    .strength-strong { background-color: green; width: 100%; }
     .password-requirements {
       margin-top: 10px;
       font-size: 0.9em;
-      display: none; /* hidden until user types */
+      display: none;
     }
     .password-requirements li {
       list-style: none;
@@ -166,13 +142,16 @@ if ($error) {
     .password-requirements li i {
       margin-right: 5px;
     }
-    .valid {
-      color: green;
+    .valid { color: green; }
+    .invalid { color: red; }
+    #confirmPasswordMessage {
+      font-size: 0.8em;
+      margin-top: 5px;
     }
-    .invalid {
-      color: red;
+    #phoneMessage {
+      font-size: 0.8em;
+      margin-top: 5px;
     }
-
     .show-password-container {
       margin-top: 5px;
       display: flex;
@@ -184,29 +163,6 @@ if ($error) {
       height: 15px;
       margin-right: 5px;
       accent-color: #555;
-    }
-    .validation-message {
-      font-size: 0.8em;
-      margin-top: 5px;
-    }
-
-    #confirmPasswordMessage {
-      font-size: 0.8em;
-      margin-top: 5px;
-    }
-
-    /* Dropdown for Gender */
-    .gender-details select {
-      padding: 5px;
-      font-size: 14px;
-      margin-top: 5px;
-      width: 100%;
-    }
-
-    /* Phone validation message */
-    #phoneMessage {
-      font-size: 0.8em;
-      margin-top: 5px;
     }
   </style>
 </head>
@@ -285,6 +241,8 @@ if ($error) {
     </div>
   </div>
 
+  <!-- jquery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <!-- intl-tel-input JS -->
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/js/intlTelInput.min.js"></script>
 
@@ -308,7 +266,7 @@ if ($error) {
     const phoneMessage = document.getElementById('phoneMessage');
     const formattedPhoneInput = document.getElementById('FormattedPhoneNumber');
 
-    // Initialize intl-tel-input
+    // intl-tel-input initialization
     const iti = window.intlTelInput(phoneInput, {
       initialCountry: "auto",
       geoIpLookup: function(success, failure) {
@@ -320,7 +278,6 @@ if ($error) {
       utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/js/utils.js"
     });
 
-    // Validate phone number on input
     phoneInput.addEventListener('blur', function() {
       if (phoneInput.value.trim().length === 0) {
         phoneMessage.textContent = '';
@@ -335,12 +292,10 @@ if ($error) {
       }
     });
 
-    // Before form submit, get the full number in E.164 format
     document.getElementById('registrationForm').addEventListener('submit', function(e) {
       if (iti.isValidNumber()) {
-        formattedPhoneInput.value = iti.getNumber(); // E.164 format
+        formattedPhoneInput.value = iti.getNumber();
       } else {
-        // If invalid, prevent submission
         e.preventDefault();
         phoneMessage.textContent = 'Invalid phone number';
         phoneMessage.style.color = 'red';
@@ -402,7 +357,6 @@ if ($error) {
       }
     }
 
-    // Confirm password match check
     confirmPasswordInput.addEventListener('input', checkPasswordMatch);
     passwordInput.addEventListener('input', checkPasswordMatch);
 
@@ -420,13 +374,12 @@ if ($error) {
       }
     }
 
-    // Name: On blur, capitalize first letter of each word
+    // Name validation on blur
     fullNameInput.addEventListener('blur', function() {
       let value = fullNameInput.value.trim();
       value = value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
       fullNameInput.value = value;
 
-      // Validate name: must start with capital letter and only letters/spaces
       if (/^[A-Z][a-zA-Z ]*$/.test(value)) {
         nameMessage.textContent = 'Looks good!';
         nameMessage.style.color = 'green';
@@ -436,7 +389,7 @@ if ($error) {
       }
     });
 
-    // Email: real-time validation
+    // Email validation on input
     emailInput.addEventListener('input', function() {
       const emailVal = emailInput.value;
       if (emailVal.length === 0) {

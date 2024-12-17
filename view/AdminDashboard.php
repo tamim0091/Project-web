@@ -22,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $email = $_POST['email'];
                 $password = $_POST['password'];
                 $confirmPassword = $_POST['confirm_password'];
-                // Use formatted phone number from hidden input
                 $phone = $_POST['FormattedPhoneNumber'] ?? '';
                 $gender = $_POST['gender'];
                 $role = $_POST['role'];
@@ -30,7 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($password !== $confirmPassword) {
                     $message = 'Error: Passwords do not match!';
                 } else {
-                    $user = new User(null, $fullName, $email, $password, $phone, $gender, $role);
+                    // Hash the password before storing
+                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                    $user = new User(null, $fullName, $email, $hashedPassword, $phone, $gender, $role);
                     if ($utilisateursC->addUser($user)) {
                         $message = 'User added successfully!';
                     } else {
@@ -79,58 +80,38 @@ $users = $utilisateursC->listUsers();
 $currentUserId = $_SESSION['id'];
 $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserId);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard | Chronovoyage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="style2.css">
-
     <!-- intl-tel-input CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/css/intlTelInput.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style2.css">
 
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f4f5f7;
+            padding-top: 70px; /* To prevent content from being hidden behind fixed navbar */
         }
 
-        .navbar-nav {
-        display: flex;
-        justify-content: flex-end; /* Align navbar items to the right */
-        list-style: none; /* Remove bullet points */
+        /* Navbar Customizations */
+        .navbar-nav .nav-link {
+            color: #fff !important;
         }
 
-        .navbar-nav > li {
-        margin-left: 20px; /* Space out navbar items */
+        .navbar-nav .nav-link:hover {
+            color: #ff6600 !important;
         }
 
-        .navbar-nav > li > a {
-        color: #fff; /* Ensure navbar text is white */
-        padding: 10px 15px; /* Add some padding around the links */
-        }
-
-        .navbar-nav > li > a:hover {
-        color: #ff6600; /* Highlight color on hover */
-        }
-
-        /* Optional: Aligning the dropdown button on the right */
-        .nav-user-wrapper {
-        display: flex;
-        justify-content: flex-end;
-        }
-
-      .navbar {
-        background-color: #333; /* Or any other color you prefer */
-      }
-
-      .navbar-brand {
-        color: white; /* Make sure the text stands out */
-      }
-
+        /* Strength Bar Styles */
         .strength-bar-container {
             width: 100%;
             height: 5px;
@@ -149,12 +130,12 @@ $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserI
         .strength-medium { background-color: orange; width: 67%; }
         .strength-strong { background-color: green; width: 100%; }
 
+        /* Password Requirements */
         .password-requirements {
             margin-top: 10px;
             font-size: 0.9em;
             display: none;
         }
-
         .password-requirements li {
             list-style: none;
             margin-bottom: 5px;
@@ -164,11 +145,14 @@ $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserI
         .password-requirements li i { margin-right: 5px; }
         .valid { color: green; }
         .invalid { color: red; }
+
+        /* Confirm Password Message */
         #confirmPasswordMessage {
             font-size: 0.8em;
             margin-top: 5px;
         }
 
+        /* Show Password Checkbox */
         .show-password-container {
             margin-top: 5px;
             display: flex;
@@ -179,50 +163,40 @@ $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserI
             width: 15px; height: 15px;
             margin-right: 5px; accent-color: #555;
         }
+
+        /* Table Styles */
         #user-table th, #user-table td {
             vertical-align: middle;
-        }
-
-        .welcome-card {
-            border: none;
-            background: #f4f5f7;
-            margin-bottom: 20px;
-        }
-
-        .welcome-card .card-body {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 15px 20px;
-        }
-
-        .welcome-card .welcome-text {
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin: 0;
-        }
-
-        .welcome-card .logout-btn {
-            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
-<div class="container-fluid mt-4">
-    
-    <?php if (isset($_SESSION['Fullname'])): ?>
-    <div class="card welcome-card">
-        <div class="card-body">
-            <h5 class="welcome-text">Welcome, <?= htmlspecialchars($_SESSION['Fullname']); ?></h5>
-            <a href="logout.php" class="btn btn-secondary btn-sm logout-btn">Logout</a>
-        </div>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Chronovoyage | Admin Pannel</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarAdmin" aria-controls="navbarAdmin" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarAdmin">
+      <ul class="navbar-nav ms-auto">
+        <!-- Dropdown with username and logout -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <?= htmlspecialchars($_SESSION['Fullname']); ?>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+            <li><a class="dropdown-item" href="logout.php">Log out</a></li>
+          </ul>
+        </li>
+      </ul>
     </div>
-    <?php endif; ?>
+  </div>
+</nav>
 
+<!-- Main Content -->
+<div class="container-fluid mt-4">
     <h2 class="mb-4">Admin Dashboard</h2>
     <?php if (isset($_GET['message'])): ?>
         <div class="alert alert-info"><?= htmlspecialchars($_GET['message']); ?></div>
@@ -342,10 +316,10 @@ $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserI
                     <td><?= htmlspecialchars($user['Role']); ?></td>
                     <td>
                         <div class="btn-group">
-                            <form action="AdminDashboard.php" method="POST">
+                            <form action="AdminDashboard.php" method="POST" class="me-2">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars($user['id']); ?>">
-                                <button type="submit" class="btn btn-danger btn-sm">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">
                                     <i class="fas fa-trash"></i> Delete
                                 </button>
                             </form>
@@ -366,201 +340,238 @@ $filteredUsers = array_filter($users, fn($user) => $user['id'] !== $currentUserI
     </div>
 </div>
 
-<!-- Scripts -->
+<!-- Bootstrap JS Bundle (includes Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Font Awesome JS (optional, for icons) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+<!-- intl-tel-input JS -->
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/js/intlTelInput.min.js"></script>
 
 <script>
-// Auto-uppercase Full Name on blur
-const fullNameInput = document.getElementById('FullName');
-const nameMessage = document.getElementById('nameMessage');
-fullNameInput.addEventListener('blur', function() {
-    let value = fullNameInput.value.trim();
-    value = value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-    fullNameInput.value = value;
+    // Initialize intl-tel-input for phone fields in both Add User Form and Admin Dashboard
+    const phoneInputs = document.querySelectorAll('#PhoneNumber');
+    const formattedPhoneInputs = document.querySelectorAll('#FormattedPhoneNumber');
+    const phoneMessages = document.querySelectorAll('#phoneMessage');
 
-    if (/^[A-Z][a-zA-Z ]*$/.test(value)) {
-        nameMessage.textContent = 'Looks good!';
-        nameMessage.style.color = 'green';
-    } else {
-        nameMessage.textContent = 'Name should start with a capital letter and contain only letters and spaces.';
-        nameMessage.style.color = 'red';
-    }
-});
+    phoneInputs.forEach((phoneInput, index) => {
+        const iti = window.intlTelInput(phoneInput, {
+            initialCountry: "auto",
+            geoIpLookup: function(success, failure) {
+                fetch("https://ipapi.co/json")
+                    .then(res => res.json())
+                    .then(data => success(data.country_code))
+                    .catch(() => success("us"));
+            },
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/js/utils.js"
+        });
 
-// Email validation on input
-const emailInput = document.getElementById('Email');
-const emailMessage = document.getElementById('emailMessage');
-emailInput.addEventListener('input', function() {
-    const emailVal = emailInput.value;
-    if (emailVal.length === 0) {
-        emailMessage.textContent = '';
-        return;
-    }
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-        emailMessage.textContent = 'Valid email';
-        emailMessage.style.color = 'green';
-    } else {
-        emailMessage.textContent = 'Invalid email';
-        emailMessage.style.color = 'red';
-    }
-});
+        phoneInput.addEventListener('blur', function() {
+            if (phoneInput.value.trim().length === 0) {
+                phoneMessages[index].textContent = '';
+                return;
+            }
+            if (iti.isValidNumber()) {
+                phoneMessages[index].textContent = 'Valid phone number';
+                phoneMessages[index].style.color = 'green';
+            } else {
+                phoneMessages[index].textContent = 'Invalid phone number';
+                phoneMessages[index].style.color = 'red';
+            }
+        });
 
-// Initialize intl-tel-input for phone field
-const phoneInput = document.getElementById('PhoneNumber');
-const formattedPhoneInput = document.getElementById('FormattedPhoneNumber');
-const phoneMessage = document.getElementById('phoneMessage');
-
-const iti = window.intlTelInput(phoneInput, {
-    initialCountry: "auto",
-    geoIpLookup: function(success, failure) {
-        fetch("https://ipapi.co/json")
-          .then(res => res.json())
-          .then(data => success(data.country_code))
-          .catch(() => success("us"));
-    },
-    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@17.0.19/build/js/utils.js"
-});
-
-phoneInput.addEventListener('blur', function() {
-    if (phoneInput.value.trim().length === 0) {
-        phoneMessage.textContent = '';
-        return;
-    }
-    if (iti.isValidNumber()) {
-        phoneMessage.textContent = 'Valid phone number';
-        phoneMessage.style.color = 'green';
-    } else {
-        phoneMessage.textContent = 'Invalid phone number';
-        phoneMessage.style.color = 'red';
-    }
-});
-
-// Before form submit, get the full number in E.164 format
-document.getElementById('addUserForm').addEventListener('submit', function(e) {
-    if (iti.isValidNumber()) {
-        formattedPhoneInput.value = iti.getNumber(); // E.164 format
-    } else {
-        e.preventDefault();
-        phoneMessage.textContent = 'Invalid phone number';
-        phoneMessage.style.color = 'red';
-    }
-});
-
-// Password strength and show password
-const passwordInput = document.getElementById('Password');
-const confirmPasswordInput = document.getElementById('ConfirmPassword');
-const showPasswordCheckbox = document.getElementById('showPasswordCheckbox');
-const strengthBarContainer = document.querySelector('.strength-bar-container');
-const strengthBar = document.getElementById('strengthBar');
-const passwordRequirements = document.getElementById('passwordRequirements');
-const lengthReq = document.getElementById('lengthRequirement');
-const uppercaseReq = document.getElementById('uppercaseRequirement');
-const numberReq = document.getElementById('numberRequirement');
-const confirmPasswordMessage = document.getElementById('confirmPasswordMessage');
-
-showPasswordCheckbox.addEventListener('change', function() {
-    passwordInput.type = this.checked ? 'text' : 'password';
-    confirmPasswordInput.type = this.checked ? 'text' : 'password';
-});
-
-passwordInput.addEventListener('input', function() {
-    const password = passwordInput.value;
-    if (password.length > 0) {
-        passwordRequirements.style.display = 'block';
-    } else {
-        passwordRequirements.style.display = 'none';
-        strengthBarContainer.style.display = 'none';
-        strengthBar.className = 'strength-bar';
-        strengthBar.style.width = '0%';
-        return;
-    }
-
-    const lengthCheck = password.length >= 8;
-    const uppercaseCheck = /[A-Z]/.test(password);
-    const numberCheck = /[0-9]/.test(password);
-
-    updateRequirement(lengthReq, lengthCheck);
-    updateRequirement(uppercaseReq, uppercaseCheck);
-    updateRequirement(numberReq, numberCheck);
-
-    let strength = 0;
-    if (lengthCheck) strength++;
-    if (uppercaseCheck) strength++;
-    if (numberCheck) strength++;
-
-    strengthBarContainer.style.display = 'block';
-    if (strength === 1) {
-        strengthBar.className = 'strength-bar strength-weak';
-    } else if (strength === 2) {
-        strengthBar.className = 'strength-bar strength-medium';
-    } else if (strength === 3) {
-        strengthBar.className = 'strength-bar strength-strong';
-    }
-});
-
-function updateRequirement(element, condition) {
-    const textContent = element.textContent.replace(/^\s*(\u2714|\u2716)?\s*/, '');
-    if (condition) {
-        element.classList.remove('invalid');
-        element.classList.add('valid');
-        element.innerHTML = '<i class="fas fa-check"></i> ' + textContent;
-    } else {
-        element.classList.remove('valid');
-        element.classList.add('invalid');
-        element.innerHTML = '<i class="fas fa-times"></i> ' + textContent;
-    }
-}
-
-confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-passwordInput.addEventListener('input', checkPasswordMatch);
-
-function checkPasswordMatch() {
-    if (confirmPasswordInput.value.length === 0) {
-        confirmPasswordMessage.textContent = '';
-        return;
-    }
-    if (passwordInput.value === confirmPasswordInput.value) {
-        confirmPasswordMessage.textContent = 'Passwords match';
-        confirmPasswordMessage.style.color = 'green';
-    } else {
-        confirmPasswordMessage.textContent = 'Passwords do not match';
-        confirmPasswordMessage.style.color = 'red';
-    }
-}
-
-// Search Functionality
-document.getElementById('search-input').addEventListener('input', function () {
-    const searchValue = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#user-table tbody tr');
-    rows.forEach(row => {
-        const cells = Array.from(row.cells).map(cell => cell.textContent.toLowerCase());
-        row.style.display = cells.some(cell => cell.includes(searchValue)) ? '' : 'none';
-    });
-});
-
-// Sorting Functionality
-const sortButton = document.getElementById('sort-button');
-const sortColumnSelect = document.getElementById('sort-column');
-let sortOrder = 'asc';
-
-sortButton.addEventListener('click', () => {
-    const table = document.getElementById('user-table');
-    const rows = Array.from(table.tBodies[0].rows);
-    const columnIndex = parseInt(sortColumnSelect.value, 10);
-
-    rows.sort((a, b) => {
-        const aValue = a.cells[columnIndex].textContent.trim().toLowerCase();
-        const bValue = b.cells[columnIndex].textContent.trim().toLowerCase();
-
-        return sortOrder === 'asc'
-            ? aValue.localeCompare(bValue, undefined, { numeric: true })
-            : bValue.localeCompare(aValue, undefined, { numeric: true });
+        // Before form submit, get the full number in E.164 format
+        const form = phoneInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (iti.isValidNumber()) {
+                    const formattedPhoneInput = form.querySelector('#FormattedPhoneNumber');
+                    if (formattedPhoneInput) {
+                        formattedPhoneInput.value = iti.getNumber(); // E.164 format
+                    }
+                } else {
+                    e.preventDefault();
+                    phoneMessages[index].textContent = 'Invalid phone number';
+                    phoneMessages[index].style.color = 'red';
+                }
+            });
+        }
     });
 
-    sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    rows.forEach(row => table.tBodies[0].appendChild(row));
-});
+    // Auto-uppercase Full Name on blur
+    const fullNameInputs = document.querySelectorAll('#FullName');
+    const nameMessages = document.querySelectorAll('#nameMessage');
+    fullNameInputs.forEach((fullNameInput, index) => {
+        fullNameInput.addEventListener('blur', function() {
+            let value = fullNameInput.value.trim();
+            value = value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+            fullNameInput.value = value;
+
+            if (/^[A-Z][a-zA-Z ]*$/.test(value)) {
+                nameMessages[index].textContent = 'Looks good!';
+                nameMessages[index].style.color = 'green';
+            } else {
+                nameMessages[index].textContent = 'Name should start with a capital letter and contain only letters and spaces.';
+                nameMessages[index].style.color = 'red';
+            }
+        });
+    });
+
+    // Email validation on input
+    const emailInputs = document.querySelectorAll('#Email');
+    const emailMessages = document.querySelectorAll('#emailMessage');
+    emailInputs.forEach((emailInput, index) => {
+        emailInput.addEventListener('input', function() {
+            const emailVal = emailInput.value;
+            if (emailVal.length === 0) {
+                emailMessages[index].textContent = '';
+                return;
+            }
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                emailMessages[index].textContent = 'Valid email';
+                emailMessages[index].style.color = 'green';
+            } else {
+                emailMessages[index].textContent = 'Invalid email';
+                emailMessages[index].style.color = 'red';
+            }
+        });
+    });
+
+    // Show/hide password functionality
+    const showPasswordCheckbox = document.getElementById('showPasswordCheckbox');
+    const passwordInputs = document.querySelectorAll('#Password');
+    const confirmPasswordInputs = document.querySelectorAll('#ConfirmPassword');
+
+    if (showPasswordCheckbox && passwordInputs.length > 0 && confirmPasswordInputs.length > 0) {
+        showPasswordCheckbox.addEventListener('change', function() {
+            const type = this.checked ? 'text' : 'password';
+            passwordInputs.forEach(input => input.type = type);
+            confirmPasswordInputs.forEach(input => input.type = type);
+        });
+    }
+
+    // Password strength and requirements
+    const passwordRequirementsList = document.querySelectorAll('#passwordRequirements');
+    const strengthBarContainers = document.querySelectorAll('.strength-bar-container');
+    const strengthBars = document.querySelectorAll('#strengthBar');
+    const lengthRequirements = document.querySelectorAll('#lengthRequirement');
+    const uppercaseRequirements = document.querySelectorAll('#uppercaseRequirement');
+    const numberRequirements = document.querySelectorAll('#numberRequirement');
+
+    passwordInputs.forEach((passwordInput, index) => {
+        const strengthBarContainer = strengthBarContainers[index];
+        const strengthBar = strengthBars[index];
+        const passwordRequirements = passwordRequirementsList[index];
+        const lengthReq = lengthRequirements[index];
+        const uppercaseReq = uppercaseRequirements[index];
+        const numberReq = numberRequirements[index];
+
+        passwordInput.addEventListener('input', function() {
+            const password = passwordInput.value;
+
+            if (password.length > 0) {
+                passwordRequirements.style.display = 'block';
+            } else {
+                passwordRequirements.style.display = 'none';
+                strengthBarContainer.style.display = 'none';
+                strengthBar.className = 'strength-bar';
+                strengthBar.style.width = '0%';
+                return;
+            }
+
+            const lengthCheck = password.length >= 8;
+            const uppercaseCheck = /[A-Z]/.test(password);
+            const numberCheck = /[0-9]/.test(password);
+
+            updateRequirement(lengthReq, lengthCheck);
+            updateRequirement(uppercaseReq, uppercaseCheck);
+            updateRequirement(numberReq, numberCheck);
+
+            let strength = 0;
+            if (lengthCheck) strength++;
+            if (uppercaseCheck) strength++;
+            if (numberCheck) strength++;
+
+            strengthBarContainer.style.display = 'block';
+            if (strength === 1) {
+                strengthBar.className = 'strength-bar strength-weak';
+            } else if (strength === 2) {
+                strengthBar.className = 'strength-bar strength-medium';
+            } else if (strength === 3) {
+                strengthBar.className = 'strength-bar strength-strong';
+            }
+        });
+
+        function updateRequirement(element, condition) {
+            const textContent = element.textContent.replace(/^\s*(\u2714|\u2716)?\s*/, '');
+            if (condition) {
+                element.classList.remove('invalid');
+                element.classList.add('valid');
+                element.innerHTML = '<i class="fas fa-check"></i> ' + textContent;
+            } else {
+                element.classList.remove('valid');
+                element.classList.add('invalid');
+                element.innerHTML = '<i class="fas fa-times"></i> ' + textContent;
+            }
+        }
+    });
+
+    // Confirm password match
+    const confirmPasswordMessages = document.querySelectorAll('#confirmPasswordMessage');
+
+    confirmPasswordInputs.forEach((confirmPasswordInput, index) => {
+        const passwordInput = passwordInputs[index];
+        const confirmPasswordMessage = confirmPasswordMessages[index];
+
+        confirmPasswordInput.addEventListener('input', function() {
+            if (confirmPasswordInput.value.length === 0) {
+                confirmPasswordMessage.textContent = '';
+                return;
+            }
+            if (passwordInput.value === confirmPasswordInput.value) {
+                confirmPasswordMessage.textContent = 'Passwords match';
+                confirmPasswordMessage.style.color = 'green';
+            } else {
+                confirmPasswordMessage.textContent = 'Passwords do not match';
+                confirmPasswordMessage.style.color = 'red';
+            }
+        });
+    });
+
+    // Search Functionality
+    const searchInput = document.getElementById('search-input');
+    const userTable = document.getElementById('user-table');
+    const tableRows = userTable.querySelectorAll('tbody tr');
+
+    searchInput.addEventListener('input', function () {
+        const searchValue = this.value.toLowerCase();
+        tableRows.forEach(row => {
+            const cells = Array.from(row.cells).map(cell => cell.textContent.toLowerCase());
+            row.style.display = cells.some(cell => cell.includes(searchValue)) ? '' : 'none';
+        });
+    });
+
+    // Sorting Functionality
+    const sortButton = document.getElementById('sort-button');
+    const sortColumnSelect = document.getElementById('sort-column');
+    let sortOrder = 'asc';
+
+    sortButton.addEventListener('click', () => {
+        const table = document.getElementById('user-table');
+        const rows = Array.from(table.tBodies[0].rows);
+        const columnIndex = parseInt(sortColumnSelect.value, 10);
+
+        rows.sort((a, b) => {
+            const aValue = a.cells[columnIndex].textContent.trim().toLowerCase();
+            const bValue = b.cells[columnIndex].textContent.trim().toLowerCase();
+
+            return sortOrder === 'asc'
+                ? aValue.localeCompare(bValue, undefined, { numeric: true })
+                : bValue.localeCompare(aValue, undefined, { numeric: true });
+        });
+
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        rows.forEach(row => table.tBodies[0].appendChild(row));
+    });
 </script>
 
 </body>
